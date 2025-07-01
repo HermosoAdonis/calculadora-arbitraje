@@ -1,8 +1,13 @@
 
 import streamlit as st
 from sympy import symbols, Eq, solve
+import pandas as pd
 
-st.title("Calculadora de Arbitraje y Clasificación de Apuestas")
+st.title("Calculadora de Apuestas con Historial y Exportación")
+
+# Inicializar historial
+if 'historial' not in st.session_state:
+    st.session_state.historial = []
 
 # ----------------------------
 # SECCIÓN 1: CALCULADORA DE ARBITRAJE
@@ -60,54 +65,36 @@ if solution:
         st.error(f"No hay arbitraje. ROI máximo: {roi:.2f}%")
 
     st.info(f"Mejor resultado: {resultado_max[0]} con ganancia de {resultado_max[1]:.2f}")
+
+    # Botón para guardar la apuesta
+    if st.button("💾 Guardar esta apuesta"):
+        st.session_state.historial.append({
+            "Cuota X": cuota1,
+            "Cuota Empate": cuota2,
+            "Cuota Y": cuota3,
+            "Monto Total": monto_total,
+            "Apuesta X": round(x_val, 2),
+            "Apuesta Empate": round(y_val, 2),
+            "Apuesta Y": round(z_val, 2),
+            "ROI %": round(roi, 2),
+            "Ganancia X": round(ganancia_x, 2),
+            "Ganancia Empate": round(ganancia_y, 2),
+            "Ganancia Y": round(ganancia_z, 2),
+            "Mejor Resultado": resultado_max[0]
+        })
+        st.success("Apuesta guardada en historial ✅")
+
+# ----------------------------
+# SECCIÓN 2: MOSTRAR HISTORIAL Y EXPORTAR
+# ----------------------------
+st.header("📒 Historial de Apuestas")
+
+if st.session_state.historial:
+    df_historial = pd.DataFrame(st.session_state.historial)
+    st.dataframe(df_historial)
+
+    # Exportar
+    archivo_excel = df_historial.to_excel(index=False)
+    st.download_button("📥 Descargar historial en Excel", data=archivo_excel, file_name="historial_apuestas.xlsx")
 else:
-    st.error("No se encontró una solución válida con las cuotas dadas.")
-
-# ----------------------------
-# SECCIÓN 2: CLASIFICACIÓN DE APUESTA MANUAL
-# ----------------------------
-st.header("🧠 Clasificación Manual del Tipo de Apuesta")
-
-minuto = st.number_input("Minuto actual del partido", min_value=0, max_value=120, value=0)
-tiempo = st.selectbox("Tiempo de juego", ["Primero", "Segundo", "Tercer cuarto", "Último cuarto"])
-marcador_equipo = st.number_input("Goles/Puntos del equipo favorito", min_value=0, value=0)
-marcador_oponente = st.number_input("Goles/Puntos del oponente", min_value=0, value=0)
-superioridad = st.selectbox("Nivel histórico del equipo favorito", ["Muy superior", "Parejo", "Inferior"])
-titulares = st.selectbox("¿Juegan titulares?", ["Sí", "No"])
-
-diferencia = marcador_equipo - marcador_oponente
-clasificacion = "Poco probable"
-if tiempo in ["Segundo", "Último cuarto"] and diferencia >= 2:
-    clasificacion = "Muy segura"
-elif diferencia == 1 and superioridad == "Muy superior" and titulares == "Sí":
-    clasificacion = "Segura"
-elif minuto == 0 and superioridad == "Muy superior":
-    clasificacion = "Probable"
-elif diferencia <= 0 and superioridad == "Parejo":
-    clasificacion = "Poco probable"
-
-st.subheader("📊 Resultado del Análisis")
-st.write(f"Clasificación de la apuesta: **{clasificacion}**")
-
-# ----------------------------
-# SECCIÓN 3: MÓDULO BASE PARA API / SCRAPING (Simulado)
-# ----------------------------
-st.header("🔌 Conexión a Datos Externos (Simulado)")
-
-fuente = st.selectbox("Fuente de datos", ["Flashscore", "SofaScore", "Bet365", "OddsPortal", "Simulado"])
-st.text("Este módulo simula la futura conexión con APIs o Scraping.")
-
-if fuente == "Simulado":
-    st.code("""# Futuro módulo de conexión real
-def obtener_datos_desde_flashscore():
-    # Aquí se implementaría el scraping o llamada a API
-    return {
-        'minuto': 66,
-        'marcador_equipo': 2,
-        'marcador_oponente': 0,
-        'tiempo': 'Segundo',
-        'superioridad': 'Muy superior',
-        'titulares': 'Sí'
-    }""", language='python')
-
-    st.success("Módulo base listo para conexión futura.")
+    st.info("No hay apuestas guardadas aún.")
