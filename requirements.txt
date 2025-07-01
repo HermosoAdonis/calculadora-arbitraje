@@ -1,2 +1,6 @@
 streamlit
 sympy
+pandas
+scikit-learn
+openpyxl
+joblib
