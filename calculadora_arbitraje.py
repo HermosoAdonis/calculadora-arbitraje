@@ -2,21 +2,41 @@
 import streamlit as st
 from sympy import symbols, Eq, solve
 import pandas as pd
-import random
+import joblib
 
-st.title("Calculadora de Apuestas con IA Simulada")
+st.title("Calculadora de Apuestas con IA Real 🤖")
 
-# Inicializar historial
+# Cargar modelo entrenado y codificadores
+try:
+    modelo = joblib.load('modelo_apuestas.pkl')
+    le_resultado = joblib.load('label_resultado.pkl')
+    le_deporte = joblib.load('label_deporte.pkl')
+    le_tiempo = joblib.load('label_tiempo.pkl')
+    ia_disponible = True
+except:
+    ia_disponible = False
+    st.warning("⚠️ IA no disponible: asegúrate de tener el modelo_apuestas.pkl y los codificadores en la carpeta.")
+
+# Estado de historial y predicción
 if 'historial' not in st.session_state:
     st.session_state.historial = []
 
-# ----------------------------
-# SECCIÓN DEPORTE Y TIEMPOS
-# ----------------------------
-st.header("⚽🏀 Selección de Deporte")
+if 'usar_ia' not in st.session_state:
+    st.session_state.usar_ia = False
 
+# Botón con ícono de robot para activar/desactivar IA
+st.markdown("""---""")
+col1, col2 = st.columns([1, 4])
+with col1:
+    if st.button("🤖", help="Activar/Desactivar IA" if ia_disponible else "IA no disponible"):
+        st.session_state.usar_ia = not st.session_state.usar_ia
+with col2:
+    st.markdown("""### Activación de IA: {}""".format("✅ Activada" if st.session_state.usar_ia else "❌ Desactivada"))
+
+# ----------------------------
+# SELECCIÓN DE DEPORTE Y TIEMPO
+# ----------------------------
 deporte = st.radio("Selecciona el deporte", ["⚽ Fútbol", "🏀 Básquetbol"])
-
 if deporte == "⚽ Fútbol":
     tiempo = st.selectbox("Tiempo del partido", [
         "Primer tiempo",
@@ -25,7 +45,7 @@ if deporte == "⚽ Fútbol":
         "Segundo tiempo extra",
         "Penales"
     ])
-elif deporte == "🏀 Básquetbol":
+else:
     tiempo = st.selectbox("Periodo de juego", [
         "Primer cuarto",
         "Segundo cuarto",
@@ -35,10 +55,8 @@ elif deporte == "🏀 Básquetbol":
     ])
 
 # ----------------------------
-# SECCIÓN CALCULADORA DE ARBITRAJE
+# DATOS DE LA APUESTA
 # ----------------------------
-st.header("🔢 Verificación de Arbitraje")
-
 cuota1 = st.number_input("Cuota Gana X", value=1.25)
 cuota2 = st.number_input("Cuota Empate", value=6.30)
 cuota3 = st.number_input("Cuota Gana Y", value=9.80)
@@ -49,9 +67,6 @@ eq1 = Eq(x + y + z, monto_total)
 eq2 = Eq(x * cuota1, y * cuota2)
 eq3 = Eq(x * cuota1, z * cuota3)
 solution = solve((eq1, eq2, eq3), (x, y, z))
-
-roi = 0
-clasificacion = ""
 
 if solution:
     x_val = float(solution[x])
@@ -88,13 +103,26 @@ if solution:
 
     st.subheader("Resumen")
     if min(ganancia_x, ganancia_y, ganancia_z) >= 0:
-        st.success(f"¡Apuesta de arbitraje rentable! ROI máximo: {roi:.2f}%")
+        st.success(f"¡Apuesta rentable! ROI máximo: {roi:.2f}%")
         if roi >= 3:
-            st.markdown("<span style='color:limegreen;font-size:20px'>🔥 ALERTA: ¡Oportunidad de alta rentabilidad detectada!</span>", unsafe_allow_html=True)
+            st.markdown("<span style='color:limegreen;font-size:18px'>🔥 Oportunidad detectada</span>", unsafe_allow_html=True)
     else:
-        st.error(f"No hay arbitraje. ROI máximo: {roi:.2f}%")
+        st.error(f"ROI negativo. ROI máximo: {roi:.2f}%")
 
-    st.info(f"Mejor resultado: {resultado_max[0]} con ganancia de {resultado_max[1]:.2f}")
+    st.info(f"Mejor resultado estimado: {resultado_max[0]}")
+
+    # 🔮 IA ACTIVADA
+    if st.session_state.usar_ia and ia_disponible:
+        try:
+            deporte_cod = le_deporte.transform([deporte])[0]
+            tiempo_cod = le_tiempo.transform([tiempo])[0]
+            datos_ia = [[cuota1, cuota2, cuota3, roi, deporte_cod, tiempo_cod]]
+            pred_cod = modelo.predict(datos_ia)[0]
+            pred_etiqueta = le_resultado.inverse_transform([pred_cod])[0]
+            st.subheader("🤖 Predicción Inteligente:")
+            st.success(f"Resultado más probable según IA: **{pred_etiqueta}**")
+        except:
+            st.error("Error al usar el modelo de IA. Verifica los archivos .pkl")
 
     if st.button("💾 Guardar esta apuesta"):
         st.session_state.historial.append({
@@ -113,37 +141,12 @@ if solution:
             "Ganancia Y": round(ganancia_z, 2),
             "Mejor Resultado": resultado_max[0]
         })
-        st.success("Apuesta guardada en historial ✅")
+        st.success("Apuesta guardada ✅")
 
 # ----------------------------
-# SECCIÓN IA SIMULADA
+# HISTORIAL
 # ----------------------------
-st.header("🧠 Predicción Inteligente (Simulada)")
-
-if st.button("🔍 Activar predicción inteligente (IA)"):
-    prob_x = random.randint(50, 80)
-    prob_e = random.randint(5, 30)
-    prob_y = 100 - prob_x - prob_e
-    st.markdown(f"""
-**Probabilidades estimadas:**
-
-- Gana X: **{prob_x}%**
-- Empate: **{prob_e}%**
-- Gana Y: **{prob_y}%**
-""")
-
-    if prob_x > prob_e and prob_x > prob_y and cuota1 > 1.2:
-        st.success("🧠 Recomendación: Apostar a Gana X (alta probabilidad + cuota atractiva)")
-    elif prob_y > prob_x and prob_y > prob_e and cuota3 > 1.5:
-        st.success("🧠 Recomendación: Apostar a Gana Y (riesgo/recompensa favorable)")
-    elif prob_e > prob_x and prob_e > prob_y and cuota2 > 4:
-        st.success("🧠 Recomendación: Apostar al Empate (empate con valor)")
-    else:
-        st.warning("🤔 No se detecta una ventaja clara. Evaluar con cautela.")
-
-# ----------------------------
-# SECCIÓN HISTORIAL
-# ----------------------------
+st.markdown("---")
 st.header("📒 Historial de Apuestas")
 
 if st.session_state.historial:
