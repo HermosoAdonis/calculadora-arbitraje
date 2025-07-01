@@ -3,7 +3,7 @@ import streamlit as st
 from sympy import symbols, Eq, solve
 import pandas as pd
 
-st.title("Calculadora de Apuestas con Historial y Exportación")
+st.title("Calculadora de Apuestas Inteligente")
 
 # Inicializar historial
 if 'historial' not in st.session_state:
@@ -24,6 +24,9 @@ eq1 = Eq(x + y + z, monto_total)
 eq2 = Eq(x * cuota1, y * cuota2)
 eq3 = Eq(x * cuota1, z * cuota3)
 solution = solve((eq1, eq2, eq3), (x, y, z))
+
+roi = 0
+clasificacion = ""
 
 if solution:
     x_val = float(solution[x])
@@ -61,6 +64,8 @@ if solution:
     st.subheader("Resumen")
     if min(ganancia_x, ganancia_y, ganancia_z) >= 0:
         st.success(f"¡Apuesta de arbitraje rentable! ROI máximo: {roi:.2f}%")
+        if roi >= 3:
+            st.markdown("""<span style='color:limegreen;font-size:20px'>🔥 ALERTA: ¡Oportunidad de alta rentabilidad detectada!</span>""", unsafe_allow_html=True)
     else:
         st.error(f"No hay arbitraje. ROI máximo: {roi:.2f}%")
 
@@ -85,15 +90,42 @@ if solution:
         st.success("Apuesta guardada en historial ✅")
 
 # ----------------------------
-# SECCIÓN 2: MOSTRAR HISTORIAL Y EXPORTAR
+# SECCIÓN 2: CLASIFICACIÓN DEL TIPO DE APUESTA
+# ----------------------------
+st.header("🧠 Clasificación Manual del Tipo de Apuesta")
+
+minuto = st.number_input("Minuto actual del partido", min_value=0, max_value=120, value=0)
+tiempo = st.selectbox("Tiempo de juego", ["Primero", "Segundo", "Tercer cuarto", "Último cuarto"])
+marcador_equipo = st.number_input("Goles/Puntos del equipo favorito", min_value=0, value=0)
+marcador_oponente = st.number_input("Goles/Puntos del oponente", min_value=0, value=0)
+superioridad = st.selectbox("Nivel histórico del equipo favorito", ["Muy superior", "Parejo", "Inferior"])
+titulares = st.selectbox("¿Juegan titulares?", ["Sí", "No"])
+
+diferencia = marcador_equipo - marcador_oponente
+
+if tiempo in ["Segundo", "Último cuarto"] and diferencia >= 2:
+    clasificacion = "Muy segura"
+elif diferencia == 1 and superioridad == "Muy superior" and titulares == "Sí":
+    clasificacion = "Segura"
+elif minuto == 0 and superioridad == "Muy superior":
+    clasificacion = "Probable"
+elif diferencia <= 0 and superioridad == "Parejo":
+    clasificacion = "Poco probable"
+
+st.subheader("📊 Resultado del Análisis")
+st.write(f"Clasificación de la apuesta: **{clasificacion}**")
+
+if clasificacion in ["Muy segura", "Segura"]:
+    st.markdown("""<span style='color:orange;font-size:20px'>🧠 ALERTA: Clasificación de alta confianza</span>""", unsafe_allow_html=True)
+
+# ----------------------------
+# SECCIÓN 3: HISTORIAL Y EXPORTACIÓN
 # ----------------------------
 st.header("📒 Historial de Apuestas")
 
 if st.session_state.historial:
     df_historial = pd.DataFrame(st.session_state.historial)
     st.dataframe(df_historial)
-
-    # Exportar
     archivo_excel = df_historial.to_excel(index=False)
     st.download_button("📥 Descargar historial en Excel", data=archivo_excel, file_name="historial_apuestas.xlsx")
 else:
