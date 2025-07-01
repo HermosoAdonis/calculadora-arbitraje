@@ -4,14 +4,14 @@ from sympy import symbols, Eq, solve
 
 st.title("Calculadora de Arbitraje en Apuestas")
 
-# Entradas del usuario
+# Entradas del usuario para arbitraje
+st.header("🔢 Verificación de Arbitraje")
 cuota1 = st.number_input("Cuota Gana X", value=1.25)
 cuota2 = st.number_input("Cuota Empate", value=6.30)
 cuota3 = st.number_input("Cuota Gana Y", value=9.80)
 monto_total = st.number_input("Monto total a apostar", value=100.0)
 
 x, y, z = symbols('x y z')
-
 eq1 = Eq(x + y + z, monto_total)
 eq2 = Eq(x * cuota1, y * cuota2)
 eq3 = Eq(x * cuota1, z * cuota3)
@@ -60,3 +60,29 @@ if solution:
     st.info(f"Mejor resultado: {resultado_max[0]} con ganancia de {resultado_max[1]:.2f}")
 else:
     st.error("No se encontró una solución válida con las cuotas dadas.")
+
+# Clasificación de tipo de apuesta
+st.header("🧠 Clasificación del Tipo de Apuesta")
+
+minuto = st.number_input("Minuto actual del partido", min_value=0, max_value=120, value=0)
+tiempo = st.selectbox("Tiempo de juego", ["Primero", "Segundo", "Tercer cuarto", "Último cuarto"])
+marcador_equipo = st.number_input("Goles/Puntos del equipo favorito", min_value=0, value=0)
+marcador_oponente = st.number_input("Goles/Puntos del oponente", min_value=0, value=0)
+superioridad = st.selectbox("Nivel histórico del equipo favorito", ["Muy superior", "Parejo", "Inferior"])
+titulares = st.selectbox("¿Juegan titulares?", ["Sí", "No"])
+
+diferencia = marcador_equipo - marcador_oponente
+
+# Lógica de clasificación
+clasificacion = "Poco probable"
+if tiempo in ["Segundo", "Último cuarto"] and diferencia >= 2:
+    clasificacion = "Muy segura"
+elif diferencia == 1 and superioridad in ["Muy superior"] and titulares == "Sí":
+    clasificacion = "Segura"
+elif minuto == 0 and superioridad == "Muy superior":
+    clasificacion = "Probable"
+elif diferencia <= 0 and superioridad == "Parejo":
+    clasificacion = "Poco probable"
+
+st.subheader("📊 Resultado del Análisis")
+st.write(f"Clasificación de la apuesta: **{clasificacion}**")
