@@ -3,14 +3,38 @@ import streamlit as st
 from sympy import symbols, Eq, solve
 import pandas as pd
 
-st.title("Calculadora de Apuestas Inteligente")
+st.title("Calculadora de Apuestas Multideporte")
 
 # Inicializar historial
 if 'historial' not in st.session_state:
     st.session_state.historial = []
 
 # ----------------------------
-# SECCIÓN 1: CALCULADORA DE ARBITRAJE
+# SECCIÓN DEPORTE Y TIEMPOS
+# ----------------------------
+st.header("⚽🏀 Selección de Deporte")
+
+deporte = st.radio("Selecciona el deporte", ["⚽ Fútbol", "🏀 Básquetbol"])
+
+if deporte == "⚽ Fútbol":
+    tiempo = st.selectbox("Tiempo del partido", [
+        "Primer tiempo",
+        "Segundo tiempo",
+        "Primer tiempo extra",
+        "Segundo tiempo extra",
+        "Penales"
+    ])
+elif deporte == "🏀 Básquetbol":
+    tiempo = st.selectbox("Periodo de juego", [
+        "Primer cuarto",
+        "Segundo cuarto",
+        "Tercer cuarto",
+        "Último cuarto",
+        "Tiempo extra"
+    ])
+
+# ----------------------------
+# SECCIÓN CALCULADORA DE ARBITRAJE
 # ----------------------------
 st.header("🔢 Verificación de Arbitraje")
 
@@ -71,9 +95,10 @@ if solution:
 
     st.info(f"Mejor resultado: {resultado_max[0]} con ganancia de {resultado_max[1]:.2f}")
 
-    # Botón para guardar la apuesta
     if st.button("💾 Guardar esta apuesta"):
         st.session_state.historial.append({
+            "Deporte": deporte,
+            "Tiempo": tiempo,
             "Cuota X": cuota1,
             "Cuota Empate": cuota2,
             "Cuota Y": cuota3,
@@ -90,36 +115,7 @@ if solution:
         st.success("Apuesta guardada en historial ✅")
 
 # ----------------------------
-# SECCIÓN 2: CLASIFICACIÓN DEL TIPO DE APUESTA
-# ----------------------------
-st.header("🧠 Clasificación Manual del Tipo de Apuesta")
-
-minuto = st.number_input("Minuto actual del partido", min_value=0, max_value=120, value=0)
-tiempo = st.selectbox("Tiempo de juego", ["Primero", "Segundo", "Tercer cuarto", "Último cuarto"])
-marcador_equipo = st.number_input("Goles/Puntos del equipo favorito", min_value=0, value=0)
-marcador_oponente = st.number_input("Goles/Puntos del oponente", min_value=0, value=0)
-superioridad = st.selectbox("Nivel histórico del equipo favorito", ["Muy superior", "Parejo", "Inferior"])
-titulares = st.selectbox("¿Juegan titulares?", ["Sí", "No"])
-
-diferencia = marcador_equipo - marcador_oponente
-
-if tiempo in ["Segundo", "Último cuarto"] and diferencia >= 2:
-    clasificacion = "Muy segura"
-elif diferencia == 1 and superioridad == "Muy superior" and titulares == "Sí":
-    clasificacion = "Segura"
-elif minuto == 0 and superioridad == "Muy superior":
-    clasificacion = "Probable"
-elif diferencia <= 0 and superioridad == "Parejo":
-    clasificacion = "Poco probable"
-
-st.subheader("📊 Resultado del Análisis")
-st.write(f"Clasificación de la apuesta: **{clasificacion}**")
-
-if clasificacion in ["Muy segura", "Segura"]:
-    st.markdown("""<span style='color:orange;font-size:20px'>🧠 ALERTA: Clasificación de alta confianza</span>""", unsafe_allow_html=True)
-
-# ----------------------------
-# SECCIÓN 3: HISTORIAL Y EXPORTACIÓN
+# SECCIÓN HISTORIAL
 # ----------------------------
 st.header("📒 Historial de Apuestas")
 
