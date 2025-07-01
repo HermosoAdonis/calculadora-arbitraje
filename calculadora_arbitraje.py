@@ -31,18 +31,32 @@ if solution:
     ganancia_y = retorno_y - monto_total
     ganancia_z = retorno_z - monto_total
 
-    st.subheader("Resultado")
+    ganancia_max = max(ganancia_x, ganancia_y, ganancia_z)
+    resultado_max = max(
+        ("Gana X", ganancia_x),
+        ("Empate", ganancia_y),
+        ("Gana Y", ganancia_z),
+        key=lambda x: x[1]
+    )
+
+    roi = (ganancia_max / monto_total) * 100
+
+    st.subheader("Distribución de Apuestas")
     st.write(f"Apuesta en Gana X: {x_val:.2f}")
     st.write(f"Apuesta en Empate: {y_val:.2f}")
     st.write(f"Apuesta en Gana Y: {z_val:.2f}")
 
-    st.write(f"\nGanancia si gana X: {ganancia_x:.2f}")
+    st.subheader("Retornos Esperados")
+    st.write(f"Ganancia si gana X: {ganancia_x:.2f}")
     st.write(f"Ganancia si hay empate: {ganancia_y:.2f}")
     st.write(f"Ganancia si gana Y: {ganancia_z:.2f}")
 
+    st.subheader("Resumen")
     if min(ganancia_x, ganancia_y, ganancia_z) >= 0:
-        st.success("¡Apuesta de arbitraje rentable!")
+        st.success(f"¡Apuesta de arbitraje rentable! ROI máximo: {roi:.2f}%")
     else:
-        st.warning("No hay arbitraje: existe pérdida potencial.")
+        st.error(f"No hay arbitraje. ROI máximo: {roi:.2f}%")
+
+    st.info(f"Mejor resultado: {resultado_max[0]} con ganancia de {resultado_max[1]:.2f}")
 else:
     st.error("No se encontró una solución válida con las cuotas dadas.")
