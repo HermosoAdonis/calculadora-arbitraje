@@ -2,10 +2,13 @@
 import streamlit as st
 from sympy import symbols, Eq, solve
 
-st.title("Calculadora de Arbitraje en Apuestas")
+st.title("Calculadora de Arbitraje y Clasificación de Apuestas")
 
-# Entradas del usuario para arbitraje
+# ----------------------------
+# SECCIÓN 1: CALCULADORA DE ARBITRAJE
+# ----------------------------
 st.header("🔢 Verificación de Arbitraje")
+
 cuota1 = st.number_input("Cuota Gana X", value=1.25)
 cuota2 = st.number_input("Cuota Empate", value=6.30)
 cuota3 = st.number_input("Cuota Gana Y", value=9.80)
@@ -15,7 +18,6 @@ x, y, z = symbols('x y z')
 eq1 = Eq(x + y + z, monto_total)
 eq2 = Eq(x * cuota1, y * cuota2)
 eq3 = Eq(x * cuota1, z * cuota3)
-
 solution = solve((eq1, eq2, eq3), (x, y, z))
 
 if solution:
@@ -61,8 +63,10 @@ if solution:
 else:
     st.error("No se encontró una solución válida con las cuotas dadas.")
 
-# Clasificación de tipo de apuesta
-st.header("🧠 Clasificación del Tipo de Apuesta")
+# ----------------------------
+# SECCIÓN 2: CLASIFICACIÓN DE APUESTA MANUAL
+# ----------------------------
+st.header("🧠 Clasificación Manual del Tipo de Apuesta")
 
 minuto = st.number_input("Minuto actual del partido", min_value=0, max_value=120, value=0)
 tiempo = st.selectbox("Tiempo de juego", ["Primero", "Segundo", "Tercer cuarto", "Último cuarto"])
@@ -72,12 +76,10 @@ superioridad = st.selectbox("Nivel histórico del equipo favorito", ["Muy superi
 titulares = st.selectbox("¿Juegan titulares?", ["Sí", "No"])
 
 diferencia = marcador_equipo - marcador_oponente
-
-# Lógica de clasificación
 clasificacion = "Poco probable"
 if tiempo in ["Segundo", "Último cuarto"] and diferencia >= 2:
     clasificacion = "Muy segura"
-elif diferencia == 1 and superioridad in ["Muy superior"] and titulares == "Sí":
+elif diferencia == 1 and superioridad == "Muy superior" and titulares == "Sí":
     clasificacion = "Segura"
 elif minuto == 0 and superioridad == "Muy superior":
     clasificacion = "Probable"
@@ -86,3 +88,26 @@ elif diferencia <= 0 and superioridad == "Parejo":
 
 st.subheader("📊 Resultado del Análisis")
 st.write(f"Clasificación de la apuesta: **{clasificacion}**")
+
+# ----------------------------
+# SECCIÓN 3: MÓDULO BASE PARA API / SCRAPING (Simulado)
+# ----------------------------
+st.header("🔌 Conexión a Datos Externos (Simulado)")
+
+fuente = st.selectbox("Fuente de datos", ["Flashscore", "SofaScore", "Bet365", "OddsPortal", "Simulado"])
+st.text("Este módulo simula la futura conexión con APIs o Scraping.")
+
+if fuente == "Simulado":
+    st.code("""# Futuro módulo de conexión real
+def obtener_datos_desde_flashscore():
+    # Aquí se implementaría el scraping o llamada a API
+    return {
+        'minuto': 66,
+        'marcador_equipo': 2,
+        'marcador_oponente': 0,
+        'tiempo': 'Segundo',
+        'superioridad': 'Muy superior',
+        'titulares': 'Sí'
+    }""", language='python')
+
+    st.success("Módulo base listo para conexión futura.")
