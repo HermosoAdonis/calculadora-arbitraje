@@ -2,8 +2,9 @@
 import streamlit as st
 from sympy import symbols, Eq, solve
 import pandas as pd
+import random
 
-st.title("Calculadora de Apuestas Multideporte")
+st.title("Calculadora de Apuestas con IA Simulada")
 
 # Inicializar historial
 if 'historial' not in st.session_state:
@@ -89,7 +90,7 @@ if solution:
     if min(ganancia_x, ganancia_y, ganancia_z) >= 0:
         st.success(f"¡Apuesta de arbitraje rentable! ROI máximo: {roi:.2f}%")
         if roi >= 3:
-            st.markdown("""<span style='color:limegreen;font-size:20px'>🔥 ALERTA: ¡Oportunidad de alta rentabilidad detectada!</span>""", unsafe_allow_html=True)
+            st.markdown("<span style='color:limegreen;font-size:20px'>🔥 ALERTA: ¡Oportunidad de alta rentabilidad detectada!</span>", unsafe_allow_html=True)
     else:
         st.error(f"No hay arbitraje. ROI máximo: {roi:.2f}%")
 
@@ -113,6 +114,32 @@ if solution:
             "Mejor Resultado": resultado_max[0]
         })
         st.success("Apuesta guardada en historial ✅")
+
+# ----------------------------
+# SECCIÓN IA SIMULADA
+# ----------------------------
+st.header("🧠 Predicción Inteligente (Simulada)")
+
+if st.button("🔍 Activar predicción inteligente (IA)"):
+    prob_x = random.randint(50, 80)
+    prob_e = random.randint(5, 30)
+    prob_y = 100 - prob_x - prob_e
+    st.markdown(f"""
+**Probabilidades estimadas:**
+
+- Gana X: **{prob_x}%**
+- Empate: **{prob_e}%**
+- Gana Y: **{prob_y}%**
+""")
+
+    if prob_x > prob_e and prob_x > prob_y and cuota1 > 1.2:
+        st.success("🧠 Recomendación: Apostar a Gana X (alta probabilidad + cuota atractiva)")
+    elif prob_y > prob_x and prob_y > prob_e and cuota3 > 1.5:
+        st.success("🧠 Recomendación: Apostar a Gana Y (riesgo/recompensa favorable)")
+    elif prob_e > prob_x and prob_e > prob_y and cuota2 > 4:
+        st.success("🧠 Recomendación: Apostar al Empate (empate con valor)")
+    else:
+        st.warning("🤔 No se detecta una ventaja clara. Evaluar con cautela.")
 
 # ----------------------------
 # SECCIÓN HISTORIAL
